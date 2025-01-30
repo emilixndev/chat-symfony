@@ -6,6 +6,7 @@ import axios from "axios";
 export default function (props) {
 
     const [messages, setMessages] = useState([])
+    const [newMessage, setNewMessage] = useState('')
 
     useEffect(() => {
         axios.get('http://localhost:8000/messages/1')
@@ -18,6 +19,24 @@ export default function (props) {
     }, []);
 
 
+    function handleSubmit(e) {
+        e.preventDefault();
+
+        axios.post('', {
+            var1: 'ts',
+            var2: 'tes'
+        })
+            .then(res => {
+                console.log(res)
+            })
+            .catch(error => {
+                console.log(error)
+            })
+
+        console.log(newMessage);
+        setNewMessage("")
+
+    }
 
     return <div>
 
@@ -46,19 +65,28 @@ export default function (props) {
             <div className="w-full px-5 flex flex-col justify-between ">
                 <div className="flex flex-col mt-5">
                     {messages.map(message => (
-                        <ChatMessage isSender={message.userId===1} message={message.content} username={message.username}></ChatMessage>
+                        <ChatMessage isSender={message.userId === 1} message={message.content}
+                                     username={message.username}></ChatMessage>
                     ))}
                 </div>
+                <div className="">
                 <div className="py-5 ">
                     <input
                         className="w-full bg-gray-300 py-5 px-3 rounded-xl"
                         type="text"
                         placeholder="type your message here..."
+                        id="inputText"
+                        onChange={event => setNewMessage(event.target.value)}
+                        value={newMessage}
                     />
+                </div>
+                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full" onClick={ handleSubmit}>
+                    envoyer
+                </button>
                 </div>
             </div>
 
         </div>
     </div>
-</div>
+    </div>
 }
