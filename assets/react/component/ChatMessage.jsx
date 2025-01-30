@@ -3,7 +3,6 @@ import React from 'react';
 export default function (props) {
 
     return <div>
-        {console.log(props.isSender)}
         {props.isSender ? (
             <div className="flex justify-end mb-4">
                 <div
@@ -12,7 +11,7 @@ export default function (props) {
                     {props.message}
                 </div>
                 <img
-                    src="https://ui-avatars.com/api/?name=E"
+                    src={`https://ui-avatars.com/api/?name=${props.username}`}
                     className="object-cover h-8 w-8 rounded-full"
                     alt=""
                 />
@@ -20,7 +19,7 @@ export default function (props) {
         ) : (
             <div className="flex justify-start mb-4">
                 <img
-                    src="https://ui-avatars.com/api/?name=E"
+                    src={`https://ui-avatars.com/api/?name=${props.username}`}
                     className="object-cover h-8 w-8 rounded-full"
                     alt=""
                 />
