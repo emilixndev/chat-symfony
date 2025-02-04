@@ -1,5 +1,5 @@
 {% extends "base.html.twig" %}
 {% block body %}
 
-    <div {{ react_component('ChatBox' ) }}></div>
+    <div id="app" {{ react_component('ChatBox' ) }} data-user_id="{{ app.user.id }}"></div>
 {% endblock %}

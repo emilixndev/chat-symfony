@@ -7,11 +7,13 @@ export default function (props) {
 
     const [messages, setMessages] = useState([])
     const [newMessage, setNewMessage] = useState('')
+    const userId= document.querySelector('#app').dataset.user_id
 
     useEffect(() => {
-        axios.get('http://localhost:8000/messages/1')
+        axios.get('http://localhost:8000/messages/1')//TODO Dynamique
             .then(response => {
                 setMessages(response.data);
+
             })
             .catch(error => {
                 console.error(error);
@@ -20,12 +22,11 @@ export default function (props) {
 
 
     function handleSubmit(e) {
-        e.preventDefault();
 
-        axios.post('', {
-            var1: 'ts',
-            var2: 'tes'
-        })
+        e.preventDefault();
+        console.log(userId)
+        axios.post(`http://localhost:8000/messages/1/send?message=${newMessage}&userId=${userId}`,// TODO
+            )
             .then(res => {
                 console.log(res)
             })
@@ -65,7 +66,7 @@ export default function (props) {
             <div className="w-full px-5 flex flex-col justify-between ">
                 <div className="flex flex-col mt-5">
                     {messages.map(message => (
-                        <ChatMessage isSender={message.userId === 1} message={message.content}
+                        <ChatMessage key={message.messageId} isSender={message.userId === Number(userId)} message={message.content}
                                      username={message.username}></ChatMessage>
                     ))}
                 </div>
