@@ -39,6 +39,7 @@ class ChatController extends AbstractController
     #[Route('/messages/{idConversation}')]
     public function messages(string $idConversation): JsonResponse
     {
+//        dd($this->messageRepository->getMessagesFromConversation(intval($idConversation)));
 
         return new JsonResponse($this->messageRepository->getMessagesFromConversation(intval($idConversation)));
     }
@@ -67,7 +68,7 @@ class ChatController extends AbstractController
 
         $this->entityManager->persist($messageObject);
         $this->entityManager->flush();
-        return new JsonResponse($this->messageRepository->getMessagesFromConversation(intval($idConversation)));
+        return new JsonResponse($this->messageRepository->getLastMessageFromUser(intval($idConversation),$user));
     }
 
 }

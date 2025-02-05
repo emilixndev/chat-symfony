@@ -6,12 +6,13 @@ import axios from 'axios';
 export default function (props) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const userId = document.querySelector('#app').dataset.user_id;
+  const userId = Number(document.querySelector('#app').dataset.user_id);
 
   useEffect(() => {
     axios
       .get('http://localhost:8000/messages/1') //TODO Dynamique
       .then((response) => {
+        console.log(response.data);
         setMessages(response.data);
       })
       .catch((error) => {
@@ -26,15 +27,14 @@ export default function (props) {
       .post(
         `http://localhost:8000/messages/1/send?message=${newMessage}&userId=${userId}` // TODO
       )
-      .then((res) => {
-        console.log(res);
+      .then((response) => {
+        messages.push(response.data[0]);
+        console.log(messages);
+        setNewMessage('');
       })
       .catch((error) => {
         console.log(error);
       });
-
-    console.log(newMessage);
-    setNewMessage('');
   }
 
   return (
@@ -85,7 +85,7 @@ export default function (props) {
                 messages.map((message) => (
                   <ChatMessage
                     key={message.messageId}
-                    isSender={message.userId === Number(userId)}
+                    isSender={message.userId === userId}
                     message={message.content}
                     username={message.username}
                   ></ChatMessage>
@@ -101,6 +101,11 @@ export default function (props) {
                   id="inputText"
                   onChange={(event) => setNewMessage(event.target.value)}
                   value={newMessage}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      handleSubmit(event);
+                    }
+                  }}
                 />
               </div>
               <button

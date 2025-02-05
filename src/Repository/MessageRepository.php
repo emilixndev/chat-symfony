@@ -3,7 +3,9 @@
 namespace App\Repository;
 
 use App\Entity\Message;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -16,15 +18,39 @@ class MessageRepository extends ServiceEntityRepository
         parent::__construct($registry, Message::class);
     }
 
+    private function getSelectForConversation(QueryBuilder $qb)
+    {
+        return $qb->select('message.id AS messageId', 'message.content', 'conversation.id AS conversationId', 'user.username', 'user.id AS userId');
+    }
+
+
     public function getMessagesFromConversation(int $idConversation)
     {
 
-        return $this->createQueryBuilder('message')
-            ->select('message.id AS messageId','message.content', 'conversation.id AS conversationId', 'user.username', 'user.id AS userId')
+        $qb = $this->createQueryBuilder('message');
+        $qb = $this->getSelectForConversation($qb);
+        return $qb
             ->leftJoin('message.conversation', 'conversation')
             ->leftJoin('message.user', 'user')
             ->andWhere('conversation.id = :idConversation')
             ->setParameter('idConversation', $idConversation)
+            ->getQuery()
+            ->getArrayResult();
+    }
+
+    public function getLastMessageFromUser(int $idConversation, User $user)
+    {
+        $qb = $this->createQueryBuilder('message');
+        $qb = $this->getSelectForConversation($qb);
+        return $qb
+            ->leftJoin('message.conversation', 'conversation')
+            ->leftJoin('message.user', 'user')
+            ->andWhere('conversation.id = :idConversation')
+            ->setParameter('idConversation', $idConversation)
+            ->andWhere('user = :user')
+            ->setParameter('user', $user)
+            ->orderBy('message.createdAt', 'DESC')
+            ->setMaxResults(1)
             ->getQuery()
             ->getArrayResult();
     }
