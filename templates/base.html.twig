@@ -9,6 +9,13 @@
         {% endblock %}
 
         {% block javascripts %}
+            <script>
+              const eventSource = new EventSource("{{ mercure('http://localhost:8083/.well-known/mercure/ui/demo/books/1.jsonld')|escape('js') }}");
+              eventSource.onmessage = event => {
+                // Will be called every time an update is published by the server
+                console.log(JSON.parse(event.data));
+              }
+            </script>
             {{ encore_entry_script_tags('app') }}
         {% endblock %}
     </head>
