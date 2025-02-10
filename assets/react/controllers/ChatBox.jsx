@@ -18,6 +18,14 @@ export default function (props) {
       .catch((error) => {
         console.error(error);
       });
+
+
+    const url = new URL('http://localhost:8083/.well-known/mercure');
+    url.searchParams.append('topic', 'http://localhost:8083/conversation/1');
+
+    const eventSource = new EventSource(url);
+
+    eventSource.onmessage = e => postNewMessageFromTopic(JSON.parse(e.data)[0]);
   }, []);
 
   function handleSubmit(e) {
@@ -35,6 +43,15 @@ export default function (props) {
       .catch((error) => {
         console.log(error);
       });
+  }
+
+  function postNewMessageFromTopic(data) {
+
+    if(data.userId !== userId){
+
+      console.log(data)
+    setMessages((prevMessages) => [...prevMessages, data]);
+    }
   }
 
   return (

@@ -17,8 +17,8 @@ class MercureController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         $update = new Update(
-            'http://localhost:8083/.well-known/mercure/ui/demo/books/1.jsonld',
-            json_encode(['message' => $data['message']])
+            'http://localhost:8083/conversation/1',
+            json_encode($data)
         );
 
         $hub->publish($update);

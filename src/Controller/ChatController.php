@@ -12,6 +12,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Attribute\Route;
 
 class ChatController extends AbstractController
@@ -20,16 +22,15 @@ class ChatController extends AbstractController
 
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private MessageRepository $messageRepository,
+        private MessageRepository      $messageRepository,
         private ConversationRepository $conversationRepository,
-        private UserRepository $userRepository,
+        private UserRepository         $userRepository,
     )
     {
     }
 
 
-
-    #[Route(path: '/chat' , name:'app_chat_index')]
+    #[Route(path: '/chat', name: 'app_chat_index')]
     public function index(): Response
     {
         return $this->render('chat.html.twig');
@@ -45,30 +46,41 @@ class ChatController extends AbstractController
     }
 
     #[Route('/messages/{idConversation}/send')]
-    public function sendMessage(string $idConversation, Request $request): JsonResponse
+    public function sendMessage(string $idConversation, Request $request, HubInterface $hub): JsonResponse
     {
         $message = $request->get('message');
         $userId = $request->get('userId');
         $user = $this->userRepository->find(intval($userId));
         $conversation = $this->conversationRepository->find(intval($idConversation));
 
-        if(null === $conversation){
-            return new JsonResponse(['error'=>'The conversation was not found'],Response::HTTP_BAD_REQUEST);
+        if (null === $conversation) {
+            return new JsonResponse(['error' => 'The conversation was not found'], Response::HTTP_BAD_REQUEST);
         }
-        if(null === $user){
-            return new JsonResponse(['error'=>'The user was not found'],Response::HTTP_BAD_REQUEST);
+        if (null === $user) {
+            return new JsonResponse(['error' => 'The user was not found'], Response::HTTP_BAD_REQUEST);
         }
         $messageObject = new Message();
         $messageObject
             ->setUser($user)
             ->setContent($message)
             ->setConversation($conversation)
-            ->setCreatedAt(new \DateTimeImmutable())
-        ;
+            ->setCreatedAt(new \DateTimeImmutable());
 
         $this->entityManager->persist($messageObject);
         $this->entityManager->flush();
-        return new JsonResponse($this->messageRepository->getLastMessageFromUser(intval($idConversation),$user));
+
+
+        $newData = $this->messageRepository->getLastMessageFromUser(intval($idConversation), $user);
+
+        $update = new Update(
+            'http://localhost:8083/conversation/1',
+            json_encode($newData)
+        );
+
+        $hub->publish($update);
+
+
+        return new JsonResponse($newData);
     }
 
 }
