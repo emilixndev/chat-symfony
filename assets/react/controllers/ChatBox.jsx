@@ -9,11 +9,9 @@ export default function (props) {
   const userId = Number(document.querySelector('#app').dataset.user_id);
   const [user, setUser] = useState(null);
   const [recentConversation, setRecentConversation] = useState([]);
-
+  const [selectedChat, setSelectedChat] = useState(0);
 
   useEffect(() => {
-
-
     axios
       .get(`http://localhost:8000/user/${userId}`)
       .then((response) => {
@@ -29,12 +27,13 @@ export default function (props) {
       .then((response) => {
         console.log(response.data);
         setRecentConversation(response.data);
+        setSelectedChat(response.data[0].conversationId);
         const url = new URL('http://localhost:8083/.well-known/mercure');
         url.searchParams.append('topic', `http://localhost:8083/conversation/${response.data[0].conversationId}`);
 
         const eventSource = new EventSource(url);
 
-        eventSource.onmessage = e => postNewMessageFromTopic(JSON.parse(e.data)[0]);
+        eventSource.onmessage = (e) => postNewMessageFromTopic(JSON.parse(e.data)[0]);
 
         axios
           .get(`http://localhost:8000/messages/${response.data[0].conversationId}`)
@@ -45,14 +44,10 @@ export default function (props) {
           .catch((error) => {
             console.error(error);
           });
-
       })
       .catch((error) => {
         console.error(error);
       });
-
-
-
   }, []);
 
   function handleSubmit(e) {
@@ -60,7 +55,7 @@ export default function (props) {
     console.log(userId);
     axios
       .post(
-        `http://localhost:8000/messages/2/send?message=${newMessage}&userId=${userId}` // TODO
+        `http://localhost:8000/messages/${selectedChat}/send?message=${newMessage}&userId=${userId}` // TODO
       )
       .then((response) => {
         messages.push(response.data[0]);
@@ -73,12 +68,26 @@ export default function (props) {
   }
 
   function postNewMessageFromTopic(data) {
-
-    if(data.userId !== userId){
-
-      console.log(data)
-    setMessages((prevMessages) => [...prevMessages, data]);
+    if (data.userId !== userId) {
+      console.log(data);
+      setMessages((prevMessages) => [...prevMessages, data]);
     }
+  }
+
+  function changeSelectedChat(id) {
+    setSelectedChat(id)
+
+    axios
+      .get(`http://localhost:8000/messages/${id}`)
+      .then((response) => {
+        console.log(response.data);
+        setMessages(response.data);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+
+
   }
 
   return (
@@ -96,12 +105,12 @@ export default function (props) {
             />
           </div>
           <div className="h-12 w-12 p-2 bg-yellow-500 rounded-full text-white font-semibold flex items-center justify-center">
-            {user&&user.username.substring(0,2)}
+            {user && user.username.substring(0, 2)}
           </div>
         </div>
+
         <div className="flex flex-row justify-between bg-white">
           <div className="flex flex-col w-2/5 border-r-2 overflow-y-auto">
-
             {recentConversation.length === null ? (
               <div role="status" className="mx-auto">
                 <svg
@@ -123,13 +132,17 @@ export default function (props) {
                 <span className="sr-only">Loading...</span>
               </div>
             ) : (
-              recentConversation.map((conversation,index) => (
-                <ChatPreview username={conversation.username} message={conversation.content} selected={index===0} key={index}></ChatPreview>
+              recentConversation.map((conversation, index) => (
+                <div onClick={() => changeSelectedChat(conversation.conversationId)} key={index}>
+                  <ChatPreview
+                    username={conversation.username}
+                    message={conversation.content}
+                    selected={conversation.conversationId === selectedChat}
+                    key={index}
+                  ></ChatPreview>
+                </div>
               ))
             )}
-
-
-
           </div>
           <div className="w-full px-5 flex flex-col justify-between ">
             <div className="flex flex-col mt-5">
