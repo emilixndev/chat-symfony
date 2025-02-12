@@ -40,4 +40,16 @@ class ConversationRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+    public function getRecentConversationFromUser(int $userId)
+    {
+        return $this->createQueryBuilder('c')
+
+
+            ->leftJoin('c.user','user')
+            ->andWhere('user.id = :user')
+            ->setParameter('user', $userId)
+            ->getQuery()
+            ->getResult()
+            ;
+    }
 }

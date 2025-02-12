@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 
+use App\Entity\Conversation;
 use App\Entity\Message;
 use App\Repository\ConversationRepository;
 use App\Repository\MessageRepository;
@@ -73,7 +74,7 @@ class ChatController extends AbstractController
         $newData = $this->messageRepository->getLastMessageFromUser(intval($idConversation), $user);
 
         $update = new Update(
-            'http://localhost:8083/conversation/1',
+            'http://localhost:8083/conversation/'.$conversation->getId(),
             json_encode($newData)
         );
 
@@ -83,4 +84,32 @@ class ChatController extends AbstractController
         return new JsonResponse($newData);
     }
 
+    #[Route('/user/{userId}')]
+    public function getUserInfo(string $userId): JsonResponse
+    {
+
+        return new JsonResponse($this->userRepository->getUserInfo(intval($userId))[0]);
+    }
+
+
+    #[Route('/messages/conversation/{userId}')]
+    public function getRecentConversation(string $userId): JsonResponse
+    {
+        $recentsConversations = [];
+        $conversations = $this->conversationRepository->getRecentConversationFromUser(intval($userId));
+        /** @var Conversation $conversation */
+        foreach ($conversations as $conversation) {
+
+            $lastMessage = $this->messageRepository->findLastMessage($conversation->getId())[0];
+            $username = $conversation->getOtherUser($this->userRepository->find($userId))->getUsername();
+            $lastMessage = array_merge($lastMessage,['username'=>$username]);
+//            $lastMessage[] = ['username'=>$username];
+            $recentsConversations  [] = $lastMessage;
+        }
+        usort($recentsConversations, function ($a, $b) {
+            return $b['createdAt'] <=> $a['createdAt']; // Tri décroissant
+        });
+
+        return new JsonResponse($recentsConversations);
+    }
 }

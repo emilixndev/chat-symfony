@@ -91,4 +91,14 @@ class Conversation
 
         return $this;
     }
+
+    public function getOtherUser(User $user){
+        foreach ($this->getUser() as $users) {
+            if ($users!== $user){
+                return $users;
+            }
+
+        }
+
+    }
 }
