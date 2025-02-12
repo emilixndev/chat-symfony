@@ -4,7 +4,7 @@ export default function (props) {
     return <div>
 
         <div
-            className={'flex flex-row py-4 px-2 justify-center items-center border-b-2 cursor-pointer '+(props.selected&&'bg-amber-300')}
+            className={'flex flex-row py-4 px-2 justify-center items-center border-b-2 cursor-pointer '+(props.selected&&'bg-gray-200')}
         >
             <div className="w-1/4">
                 <img
