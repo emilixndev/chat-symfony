@@ -3,90 +3,78 @@ import React, { useEffect, useState } from 'react';
 import ChatMessage from '../component/ChatMessage';
 import axios from 'axios';
 import ChatPreview from '../component/ChatPreview';
-import { fetchUsers, UserType } from '../type/api/UserType';
+import { fetchUsers } from '../services/Api/UserService';
+import { UserType } from '../type/api/UserType';
+import { fetchConversation } from '../services/Api/ConversationService';
+import { ConversationListType } from '../type/api/ConversationType';
+import { fetchMessages, postNewMessage } from '../services/Api/MessageService';
+import { MessagesListType, MessageType } from '../type/api/MessageType';
 
 export default function () {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<MessagesListType>([]);
   const [newMessage, setNewMessage] = useState('');
-  const userId = Number(document.querySelector('#app')?.dataset.user_id);
+
+  const userId = Number((document.querySelector('#app') as HTMLInputElement | null)?.dataset.user_id);
   const [user, setUser] = useState<UserType>();
-  const [recentConversation, setRecentConversation] = useState([]);
+  const [recentConversation, setRecentConversation] = useState<ConversationListType>([]);
   const [selectedChat, setSelectedChat] = useState(0);
+
+  useEffect(() => {
+    getUser();
+    getConversation();
+  }, []);
+  useEffect(() => {
+    const url = new URL('http://localhost:8083/.well-known/mercure');
+    url.searchParams.append('topic', `http://localhost:8083/conversation/${selectedChat}`);
+
+    const eventSource = new EventSource(url);
+
+    eventSource.onmessage = (e) => postNewMessageFromTopic(JSON.parse(e.data)[0]);
+
+    getMessages();
+  }, [selectedChat]);
+
+  const getConversation = async () => {
+    const response = await fetchConversation(userId);
+    setRecentConversation(response);
+    console.log(userId);
+    setSelectedChat(response[0].conversationId);
+  };
+
   const getUser = async () => {
     try {
       const response = await fetchUsers(userId);
       setUser(response);
-    } catch (err) {
-      console.log('Failed to fetch users.');
-    }
+    } catch (e) {}
   };
-  useEffect(() => {
-    getUser();
+  const getMessages = async () => {
+    try {
+      const response = await fetchMessages(selectedChat);
+      setMessages(response);
+    } catch (e) {}
+  };
+  const sendMessage = async (selectedChat: number, newMessage: string, userId: number) => {
+    try {
+      const response = await postNewMessage(selectedChat, newMessage, userId);
+      messages.push(response[0]);
+      setNewMessage('');
+    } catch (e) {}
+  };
 
-    axios
-      .get(`http://localhost:8000/messages/conversation/${userId}`)
-      .then((response) => {
-        console.log(response.data);
-        setRecentConversation(response.data);
-        setSelectedChat(response.data[0].conversationId);
-        const url = new URL('http://localhost:8083/.well-known/mercure');
-        url.searchParams.append('topic', `http://localhost:8083/conversation/${response.data[0].conversationId}`);
-
-        const eventSource = new EventSource(url);
-
-        eventSource.onmessage = (e) => postNewMessageFromTopic(JSON.parse(e.data)[0]);
-
-        axios
-          .get(`http://localhost:8000/messages/${response.data[0].conversationId}`)
-          .then((response) => {
-            console.log(response.data);
-            setMessages(response.data);
-          })
-          .catch((error) => {
-            console.error(error);
-          });
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }, []);
-
-  function handleSubmit(e) {
+  function handleSubmit(e: React.FormEvent | React.KeyboardEvent) {
     e.preventDefault();
-    console.log(userId);
-    axios
-      .post(
-        `http://localhost:8000/messages/${selectedChat}/send?message=${newMessage}&userId=${userId}` // TODO
-      )
-      .then((response) => {
-        messages.push(response.data[0]);
-        console.log(messages);
-        setNewMessage('');
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    sendMessage(selectedChat, newMessage, userId);
   }
 
-  function postNewMessageFromTopic(data) {
+  function postNewMessageFromTopic(data: MessageType) {
     if (data.userId !== userId) {
-      console.log(data);
       setMessages((prevMessages) => [...prevMessages, data]);
     }
   }
 
-  function changeSelectedChat(id) {
+  function changeSelectedChat(id: number) {
     setSelectedChat(id);
-
-    axios
-      .get(`http://localhost:8000/messages/${id}`)
-      .then((response) => {
-        console.log(response.data);
-        setMessages(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    getMessages();
   }
 
   return (
@@ -166,7 +154,7 @@ export default function () {
                   <span className="sr-only">Loading...</span>
                 </div>
               ) : (
-                messages.map((message) => (
+                messages.map((message: MessageType) => (
                   <ChatMessage
                     key={message.messageId}
                     isSender={message.userId === userId}
