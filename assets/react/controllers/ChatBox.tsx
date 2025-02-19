@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
 import ChatMessage from '../component/ChatMessage';
-import axios from 'axios';
 import ChatPreview from '../component/ChatPreview';
 import { fetchUsers } from '../services/Api/UserService';
 import { UserType } from '../type/api/UserType';
